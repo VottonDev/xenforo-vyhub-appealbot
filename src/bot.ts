@@ -23,6 +23,15 @@ sql.on('error', function (err) {
   }
 });
 
+// If connection is lost, attempt to reconnect every 5 seconds.
+sql.on('close', function () {
+  console.log('Database connection closed.');
+  console.log('Attempting to reconnect to database...');
+  setTimeout(function () {
+    sql.connect();
+  }, 5000);
+});
+
 async function getBanAppeals() {
   // Get forum
   xenforo.getForum({ id: process.env.FORUM_NODE_ID }, '', function (_error: any, _message: any, body: any) {
