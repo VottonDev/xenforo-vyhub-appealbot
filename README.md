@@ -1,4 +1,4 @@
-# Xenforo Vynhub Ban Appeal Bot
+# Xenforo Vyhub Ban Appeal Bot
 
 A simple bot that helps to manage ban appeals on a Xenforo forum.
 
