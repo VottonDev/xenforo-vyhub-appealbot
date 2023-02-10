@@ -14,6 +14,7 @@ if (sql) {
 sql.on('error', function (err) {
   console.log('Database error: ', err);
   if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+    sql.end();
     console.log('Attempting to reconnect to database...');
     setTimeout(function () {
       sql.connect();
@@ -25,6 +26,7 @@ sql.on('error', function (err) {
 
 // If connection is lost, attempt to reconnect every 5 seconds.
 sql.on('close', function () {
+  sql.end();
   console.log('Database connection closed.');
   console.log('Attempting to reconnect to database...');
   setTimeout(function () {
