@@ -1,22 +1,19 @@
 version: '3.8'
 services:
-  xenforo-appealbot:
-    container_name: xenforo-appealbot
+  xenforo-vyhub-appealbot:
+    container_name: xenforo-vyhub-appealbot
     build:
       context: .
       dockerfile: ./docker/Dockerfile
     environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - VYHUB_API_URL=${VYHUB_API_URL}
+      - VYHUB_API_KEY=${VYHUB_API_KEY}
       - XF_URL=${XF_URL}
       - XF_API_KEY=${XF_API_KEY}
-      - XF_DB_HOST=${XF_DB_HOST}
-      - XF_DB_NAME=${XF_DB_NAME}
-      - XF_DB_USER=${XF_DB_USER}
-      - XF_DB_PASS=${XF_DB_PASS}
-      - PANEL_DB_HOST=${PANEL_DB_HOST}
-      - PANEL_DB_NAME=${PANEL_DB_NAME}
-      - PANEL_DB_USER=${PANEL_DB_USER}
-      - PANEL_DB_PASS=${PANEL_DB_PASS}
       - FORUM_NODE_ID=${FORUM_NODE_ID}
       - FORUM_PREFIX=${FORUM_PREFIX}
-      - GEXTENSION_PANEL_URL=${GEXTENSION_PANEL_URL}
     network_mode: 'bridge'
