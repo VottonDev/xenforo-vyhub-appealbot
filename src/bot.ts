@@ -117,16 +117,26 @@ async function getUserSteamID(userid: number, callback: any) {
   const query = "SELECT provider_key FROM xf_user_connected_account WHERE provider = 'steam' AND user_id = ? LIMIT 1";
   const params = [userid];
 
-  // Validate the userID
+  // Validate the userIDs
   if (!userid) {
-    return callback(new Error('User ID is missing'));
+    return callback(new Error('User IDs are missing'));
   }
+
   sql
     .query(query, params)
     .then(function (result: any) {
+      const steamIDs: string[] = [];
       if (result.length > 0) {
-        callback(result[0][0].provider_key.toString());
+        for (let i = 0; i < result.length; i++) {
+          if (result[i][0] && result[i][0].provider_key) {
+            steamIDs.push(result[i][0].provider_key.toString());
+          }
+        }
       }
+      // Send the SteamIDs back one by one
+      steamIDs.forEach(function (steamid: string) {
+        callback(steamid);
+      });
     })
     .catch(function (err: any) {
       console.log(err);
@@ -179,6 +189,11 @@ async function getBanOnUser(steamid: string, callback: any) {
     },
   });
   const vyhubBanData = await vyhubBan.json();
+
+  // Check that the API key is valid
+  if (vyhubBanData.error) {
+    return callback(new Error('Invalid API key'));
+  }
 
   if (vyhubBanData['items'].length > 0) {
     callback(vyhubBanData);
