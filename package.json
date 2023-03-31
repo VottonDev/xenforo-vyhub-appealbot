@@ -23,7 +23,7 @@
     "@types/node": "^18.15.9",
     "prettier": "^2.8.7",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.3"
   },
   "dependencies": {
     "@votton/api-wrapper": "^1.0.7",
