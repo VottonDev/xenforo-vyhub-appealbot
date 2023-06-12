@@ -1,8 +1,16 @@
 import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
-dotenv.config();
 import sql from './common/db.js';
 import xenforo from './common/xenforoWrapper.js';
+
+dotenv.config();
+
+// Constants
+const PROTOCOL_CONNECTION_LOST = 'PROTOCOL_CONNECTION_LOST';
+const RECONNECT_INTERVAL = 5000; // 5 seconds
+const SECONDS_IN_DAY = 86400;
+const SECONDS_IN_HOUR = 3600;
+const SECONDS_IN_MINUTE = 60;
 
 let appealCache: any[] = [];
 
@@ -10,40 +18,49 @@ if (sql) {
   console.log('Connected to Xenforo database.');
 }
 
-// if connection error, log it. Attempt to reconnect every 5 seconds.
-sql.on('error', function (err) {
+// If connection error, log it. Attempt to reconnect every 5 seconds.
+sql.on('error', handleDBError);
+
+// If connection is lost, attempt to reconnect every 5 seconds.
+sql.on('close', handleDBClose);
+
+function handleDBError(err: any) {
   console.log('Database error: ', err);
-  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+  if (err.code === PROTOCOL_CONNECTION_LOST) {
     sql.end();
     console.log('Attempting to reconnect to database...');
     setTimeout(function () {
       sql.connect();
-    }, 5000);
+    }, RECONNECT_INTERVAL);
   } else {
     throw err;
   }
-});
+}
 
-// If connection is lost, attempt to reconnect every 5 seconds.
-sql.on('close', function () {
+function handleDBClose() {
   sql.end();
   console.log('Database connection closed.');
   console.log('Attempting to reconnect to database...');
   setTimeout(function () {
     sql.connect();
-  }, 5000);
-});
+  }, RECONNECT_INTERVAL);
+}
 
 async function getBanAppeals() {
-  // Get forum
-  xenforo.getForum({ id: process.env.FORUM_NODE_ID }, '', function (_error: any, _message: any, body: any) {
-    body.threads.forEach(async function (thread: any) {
-      if (thread.prefix_id === 0 && appealCache.includes(thread.thread_id) === false) {
+  try {
+    // Get forum
+    const result = await xenforo.getForum({ id: process.env.FORUM_NODE_ID }, '');
+    const body = result.body;
+
+    for (const thread of body.threads) {
+      if (thread.prefix_id === 0 && !appealCache.includes(thread.thread_id)) {
         appealCache.push(thread.thread_id);
-        checkBanAppeal(thread.title, thread.thread_id, thread.custom_fields, thread.user_id);
+        await checkBanAppeal(thread.title, thread.thread_id, thread.custom_fields, thread.user_id);
       }
-    });
-  });
+    }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function checkBanAppeal(title: string, threadid: number, _data: any, userid: number) {
@@ -57,24 +74,24 @@ async function checkBanAppeal(title: string, threadid: number, _data: any, useri
         const unbanDate = new Date(banInfo['items'][0].ends_on);
         const ban_length = banInfo['items'][0].length;
         // Convert ban_length to more readable format (This is in seconds)
-        const ban_length_days = Math.floor(ban_length / 86400);
-        const ban_length_hours = Math.floor((ban_length % 86400) / 3600);
-        const ban_length_minutes = Math.floor(((ban_length % 86400) % 3600) / 60);
-        const ban_length_seconds = ((ban_length % 86400) % 3600) % 60;
+        const ban_length_days = Math.floor(ban_length / SECONDS_IN_DAY);
+        const ban_length_hours = Math.floor((ban_length % SECONDS_IN_DAY) / SECONDS_IN_HOUR);
+        const ban_length_minutes = Math.floor(((ban_length % SECONDS_IN_DAY) % SECONDS_IN_HOUR) / SECONDS_IN_MINUTE);
+        const ban_length_seconds = ((ban_length % SECONDS_IN_DAY) % SECONDS_IN_HOUR) % SECONDS_IN_MINUTE;
 
         // Format the ban length
         let ban_length_formatted = '';
         if (ban_length_days > 0) {
-          ban_length_formatted = ban_length_formatted + ban_length_days + ' days ';
+          ban_length_formatted += ban_length_days + ' days ';
         }
         if (ban_length_hours > 0) {
-          ban_length_formatted = ban_length_formatted + ban_length_hours + ' hours ';
+          ban_length_formatted += ban_length_hours + ' hours ';
         }
         if (ban_length_minutes > 0) {
-          ban_length_formatted = ban_length_formatted + ban_length_minutes + ' minutes ';
+          ban_length_formatted += ban_length_minutes + ' minutes ';
         }
         if (ban_length_seconds > 0) {
-          ban_length_formatted = ban_length_formatted + ban_length_seconds + ' seconds ';
+          ban_length_formatted += ban_length_seconds + ' seconds ';
         }
 
         let p = '[B]Ban Information[/B]\n[LIST]';
@@ -171,44 +188,58 @@ async function getBanOnUser(steamid: string, callback: any) {
   const sql = 'SELECT * FROM xf_ban WHERE user_id = ? LIMIT 1';
   const params = [steamid];
 
-  const vyhub = await fetch(process.env.VYHUB_API_URL + '/user/' + steamid + '?type=STEAM', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  const vyhubUser: any = await vyhub.json();
-  // Get the "id" of the user
-  const vyhubUserID = vyhubUser.id;
+  try {
+    const vyhub = await fetch(process.env.VYHUB_API_URL + '/user/' + steamid + '?type=STEAM', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  const vyhubBan: any = await fetch(process.env.VYHUB_API_URL + '/ban/' + '?sort_desc=true&active=true&user_id=' + vyhubUserID + '&page=1&size=50', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + process.env.VYHUB_API_KEY,
-    },
-  });
-  const vyhubBanData = await vyhubBan.json();
+    if (!vyhub.ok) {
+      throw new Error(`Server error: ${vyhub.status}`);
+    }
 
-  // Check that the API key is valid
-  if (vyhubBanData.error) {
-    return callback(new Error('Invalid API key'));
-  }
+    const vyhubUser: any = await vyhub.json();
+    const vyhubUserID = vyhubUser.id;
 
-  if (vyhubBanData['items'].length > 0) {
-    callback(vyhubBanData);
+    const vyhubBan: any = await fetch(process.env.VYHUB_API_URL + '/ban/' + '?sort_desc=true&active=true&user_id=' + vyhubUserID + '&page=1&size=50', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + process.env.VYHUB_API_KEY,
+      },
+    });
+
+    if (!vyhubBan.ok) {
+      throw new Error(`Server error: ${vyhubBan.status}`);
+    }
+
+    const vyhubBanData = await vyhubBan.json();
+
+    if (vyhubBanData.error) {
+      if (vyhubBanData.error.message.includes('Unauthorized')) {
+        console.error('The API key has expired.');
+      }
+      return callback(new Error('Invalid API key'));
+    }
+
+    if (vyhubBanData['items'].length > 0) {
+      callback(vyhubBanData);
+    }
+  } catch (err) {
+    console.error(`Error: ${err}`);
   }
 }
 
 async function main() {
-  getBanAppeals();
-  setInterval(getBanAppeals, 5000);
+  try {
+    await getBanAppeals();
+    setInterval(getBanAppeals, RECONNECT_INTERVAL);
+    console.log('Bot is running.');
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-main()
-  .then(() => {
-    console.log('Bot is running.');
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+main();
