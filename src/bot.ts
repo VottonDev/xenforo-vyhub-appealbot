@@ -168,7 +168,7 @@ async function getBanOnUser(steamid: string, callback: any) {
       if (!steamid) {
           return callback(new Error('Steam ID is missing'));
       }
-  
+
       const vyhub = await fetch(process.env.VYHUB_API_URL + '/user/' + steamid + '?type=STEAM', {
           method: 'GET',
           headers: {
@@ -178,7 +178,7 @@ async function getBanOnUser(steamid: string, callback: any) {
       const vyhubUser: any = await vyhub.json();
       // Get the "id" of the user
       const vyhubUserID = vyhubUser.id;
-  
+
       const vyhubBan: any = await fetch(process.env.VYHUB_API_URL + '/ban/' + '?sort_desc=true&active=true&user_id=' + vyhubUserID + '&page=1&size=50', {
           method: 'GET',
           headers: {
@@ -191,13 +191,14 @@ async function getBanOnUser(steamid: string, callback: any) {
       if (!vyhubBanData) {
           return callback(new Error('Failed to fetch or parse vyhub ban data'));
       }
-  
+
       // Check that the API key is valid
       if (vyhubBanData.error) {
           return callback(new Error('Invalid API key'));
       }
 
-      if (Array.isArray(vyhubBanData['items']) && vyhubBanData['items'].length > 0) {
+      // Check if vyhubBanData is not null and items property exists and it's an array with a non-zero length
+      if (vyhubBanData && Array.isArray(vyhubBanData['items']) && vyhubBanData['items'].length > 0) {
           callback(null, vyhubBanData);
       } else {
           callback(null, 'No items found');
