@@ -49,7 +49,13 @@ async function getBanAppeals() {
 async function checkBanAppeal(title: string, threadid: number, _data: any, userid: number) {
   // Get the user's steam ID
   getUserSteamID(userid, async function (steamid: string) {
-    getBanOnUser(steamid, async function (banInfo: any) {
+    getBanOnUser(steamid, async function (err: any, banInfo: any) {
+      // Check for errors or no items found in banInfo
+      if (err || !banInfo || !banInfo['items'] || !banInfo['items'].length) {
+        console.error(err || 'No ban info found');
+        return;
+      }
+
       getForumUserBySteamID(banInfo['items'][0]['creator'].identifier, async function (gotIt: any, adminid: number) {
         console.log('Found new appeal from ' + steamid + ' for ' + userid + ' for ban #' + banInfo['items'][0].id + ' by ' + banInfo['items'][0]['creator'].identifier);
 
@@ -164,39 +170,47 @@ async function getForumUserBySteamID(steamid: string, callback: any) {
 }
 
 async function getBanOnUser(steamid: string, callback: any) {
-  if (!steamid) {
-    return callback(new Error('Steam ID is missing'));
-  }
+  try {
+      if (!steamid) {
+          return callback(new Error('Steam ID is missing'));
+      }
 
-  const sql = 'SELECT * FROM xf_ban WHERE user_id = ? LIMIT 1';
-  const params = [steamid];
+      const vyhub = await fetch(process.env.VYHUB_API_URL + '/user/' + steamid + '?type=STEAM', {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+      });
+      const vyhubUser: any = await vyhub.json();
+      // Get the "id" of the user
+      const vyhubUserID = vyhubUser.id;
 
-  const vyhub = await fetch(process.env.VYHUB_API_URL + '/user/' + steamid + '?type=STEAM', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  const vyhubUser: any = await vyhub.json();
-  // Get the "id" of the user
-  const vyhubUserID = vyhubUser.id;
+      const vyhubBan: any = await fetch(process.env.VYHUB_API_URL + '/ban/' + '?sort_desc=true&active=true&user_id=' + vyhubUserID + '&page=1&size=50', {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + process.env.VYHUB_API_KEY,
+          },
+      });
+      const vyhubBanData = await vyhubBan.json();
 
-  const vyhubBan: any = await fetch(process.env.VYHUB_API_URL + '/ban/' + '?sort_desc=true&active=true&user_id=' + vyhubUserID + '&page=1&size=50', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + process.env.VYHUB_API_KEY,
-    },
-  });
-  const vyhubBanData = await vyhubBan.json();
+      if (!vyhubBanData) {
+          return callback(new Error('Failed to fetch or parse vyhub ban data'));
+      }
 
-  // Check that the API key is valid
-  if (vyhubBanData.error) {
-    return callback(new Error('Invalid API key'));
-  }
+      // Check that the API key is valid
+      if (vyhubBanData.error) {
+          return callback(new Error('Invalid API key'));
+      }
 
-  if (vyhubBanData['items'].length > 0) {
-    callback(vyhubBanData);
+      // Check if vyhubBanData is not null and items property exists and it's an array with a non-zero length
+      if (vyhubBanData && Array.isArray(vyhubBanData['items']) && vyhubBanData['items'].length > 0) {
+          callback(null, vyhubBanData);
+      } else {
+          callback(null, 'No items found');
+      }
+  } catch (error) {
+      return callback(error);
   }
 }
 
