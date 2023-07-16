@@ -49,7 +49,13 @@ async function getBanAppeals() {
 async function checkBanAppeal(title: string, threadid: number, _data: any, userid: number) {
   // Get the user's steam ID
   getUserSteamID(userid, async function (steamid: string) {
-    getBanOnUser(steamid, async function (banInfo: any) {
+    getBanOnUser(steamid, async function (err: any, banInfo: any) {
+      // Check for errors or no items found in banInfo
+      if (err || !banInfo || !banInfo['items'] || !banInfo['items'].length) {
+        console.error(err || 'No ban info found');
+        return;
+      }
+
       getForumUserBySteamID(banInfo['items'][0]['creator'].identifier, async function (gotIt: any, adminid: number) {
         console.log('Found new appeal from ' + steamid + ' for ' + userid + ' for ban #' + banInfo['items'][0].id + ' by ' + banInfo['items'][0]['creator'].identifier);
 
