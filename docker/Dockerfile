@@ -1,4 +1,4 @@
-FROM node:current-buster-slim
+FROM node:20.5-bookworm-slim
 
 WORKDIR /appealbot
 
