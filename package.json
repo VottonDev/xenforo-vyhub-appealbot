@@ -29,6 +29,6 @@
     "@votton/api-wrapper": "^1.0.7",
     "dotenv": "^16.3.1",
     "mysql2": "^3.5.2",
-    "node-fetch": "^3.3.1"
+    "node-fetch": "^3.3.2"
   }
 }
