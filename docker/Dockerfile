@@ -1,4 +1,4 @@
-FROM node:20.8-bookworm-slim
+FROM node:20.12-bookworm-slim
 
 WORKDIR /appealbot
 
