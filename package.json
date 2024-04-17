@@ -20,15 +20,15 @@
   },
   "homepage": "https://github.com/VottonDev/xenforo-vyhub-appealbot#readme",
   "devDependencies": {
-    "@types/node": "^20.10.5",
-    "prettier": "^3.1.1",
+    "@types/node": "^20.12.7",
+    "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.5"
   },
   "dependencies": {
     "@votton/api-wrapper": "^1.0.7",
-    "dotenv": "^16.3.1",
-    "mysql2": "^3.6.5",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.9.5",
     "node-fetch": "^3.3.2"
   }
 }
