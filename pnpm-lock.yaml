@@ -12,8 +12,8 @@ dependencies:
     specifier: ^16.4.5
     version: 16.4.5
   mysql2:
-    specifier: ^3.9.5
-    version: 3.9.5
+    specifier: ^3.9.6
+    version: 3.9.6
   node-fetch:
     specifier: ^3.3.2
     version: 3.3.2
@@ -356,8 +356,8 @@ packages:
       mime-db: 1.52.0
     dev: false
 
-  /mysql2@3.9.5:
-    resolution: {integrity: sha512-idfCjWgJEIU2zToiAsy1UO9RQ+VvCrbfB9458LrComY7mJmAIvjdD+/58VmNLFUeQpKE4xZZqD+yZe3tlu62NQ==}
+  /mysql2@3.9.6:
+    resolution: {integrity: sha512-9NYUMLQv6yXnu+5hUh8PZ5CdKoG6VWDzXbojIdTyob8upNZXU3rBNQK9viaEqfgw+LMifhd+53VEZPxZk3bTWA==}
     engines: {node: '>= 8.0'}
     dependencies:
       denque: 2.1.0
