@@ -28,7 +28,7 @@
   "dependencies": {
     "@votton/api-wrapper": "^1.0.7",
     "dotenv": "^16.4.5",
-    "mysql2": "^3.9.5",
+    "mysql2": "^3.10.3",
     "node-fetch": "^3.3.2"
   }
 }
