@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/VottonDev/xenforo-vyhub-appealbot#readme",
   "devDependencies": {
-    "@types/node": "^20.14.9",
+    "@types/node": "^22.5.0",
     "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
