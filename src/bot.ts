@@ -36,7 +36,18 @@ sql.on('close', function () {
 
 async function getBanAppeals() {
   // Get forum
-  xenforo.getForum({ id: process.env.FORUM_NODE_ID }, '', function (_error: any, _message: any, body: any) {
+  xenforo.getForum({ id: process.env.FORUM_NODE_ID }, '', function (error: any, _message: any, body: any) {
+    // Never let a bad/empty Xenforo response crash the whole process. A missing
+    // threads array usually means the request was blocked upstream (e.g. a
+    // Cloudflare challenge returning HTML) or the API key is invalid.
+    if (error) {
+      console.error('Failed to fetch forum threads from Xenforo:', error);
+      return;
+    }
+    if (!body || !Array.isArray(body.threads)) {
+      console.error('Unexpected Xenforo response (no threads array):', body);
+      return;
+    }
     body.threads.forEach(async function (thread: any) {
       if (thread.prefix_id === 0 && appealCache.includes(thread.thread_id) === false) {
         appealCache.push(thread.thread_id);

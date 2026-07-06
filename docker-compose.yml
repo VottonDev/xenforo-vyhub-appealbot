@@ -8,6 +8,14 @@ services:
     restart: unless-stopped
     # Proper PID 1 / signal handling and zombie reaping.
     init: true
+    # The forum sits behind Cloudflare, which challenges requests coming from the
+    # server's own IP. Since the forum (nginx) runs on this same host, resolve the
+    # forum's hostname to the Docker bridge gateway so the bot talks to the local
+    # origin directly and bypasses Cloudflare. TLS still validates against the real
+    # Let's Encrypt certificate because the Host/SNI is unchanged.
+    # NOTE: update the IP if XF_URL's hostname changes or the bridge gateway differs.
+    extra_hosts:
+      - 'willard.network:172.17.0.1'
     environment:
       - DB_HOST=${DB_HOST}
       - DB_USER=${DB_USER}
