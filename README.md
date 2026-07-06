@@ -24,6 +24,21 @@ FORUM_NODE_ID=
 FORUM_PREFIX=
 ```
 
+> **VYHUB_API_KEY** should be a dedicated VyHub **API token**, not a personal
+> account bearer token (those carry far too much access and expire). Create one
+> scoped to only the `ban_show` property so it can read bans across the network and
+> nothing else. Via the API:
+>
+> ```
+> curl -X POST "$VYHUB_API_URL/general/api-token" \
+>   -H "Authorization: Bearer <admin-bearer-token>" \
+>   -H "Content-Type: application/json" \
+>   -d '{"name":"Appeal Bot","properties":["ban_show"]}'
+> ```
+>
+> Use the returned `access_token` as `VYHUB_API_KEY`. Leaving out `serverbundle_id`
+> grants `ban_show` network-wide, and the token does not expire.
+
 3. Run `npm install`
 4. Run `npm run build`
 5. Run `npm run start`

@@ -1,4 +1,18 @@
-/node_modules/
+node_modules
+build
 .git
 .gitignore
+.dockerignore
+.github
 .idea
+.vscode
+# Never bake secrets into the image
+.env
+.env.*
+# Compose / docs are not needed inside the image
+docker-compose.yml
+*.md
+# Misc
+*.tgz
+*.log
+*.tsbuildinfo

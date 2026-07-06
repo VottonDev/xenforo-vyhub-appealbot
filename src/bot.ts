@@ -92,7 +92,11 @@ async function checkBanAppeal(title: string, threadid: number, _data: any, useri
         p = p + '\n[*][B]Banned By:[/B] ' + banInfo['items'][0]['creator'].identifier + ' (' + banInfo['items'][0]['creator'].username + ')';
 
         p = p + '\n[/LIST]';
-        p = escape(p);
+        // The api-wrapper injects `message` straight into the query string without
+        // encoding it, so we must URL-encode here. encodeURIComponent (not the
+        // deprecated escape()) correctly handles spaces, BB-code brackets and any
+        // non-ASCII characters in ban reasons/usernames.
+        p = encodeURIComponent(p);
 
         // If the thread title already has steamid in it, don't post it again
         // nor update the thread
@@ -175,36 +179,56 @@ async function getBanOnUser(steamid: string, callback: any) {
           return callback(new Error('Steam ID is missing'));
       }
 
+      // A scoped VyHub API token (with the `ban_show` property) is sent on every
+      // request. Both endpoints are documented as protected, so we always
+      // authenticate rather than relying on anonymous access.
+      const headers = {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + process.env.VYHUB_API_KEY,
+      };
+
       const vyhub = await fetch(process.env.VYHUB_API_URL + '/user/' + steamid + '?type=STEAM', {
           method: 'GET',
-          headers: {
-              'Content-Type': 'application/json',
-          },
+          headers,
       });
+
+      if (!vyhub.ok) {
+          return callback(new Error('VyHub user lookup failed (' + vyhub.status + ' ' + vyhub.statusText + ') for steamid ' + steamid));
+      }
+
       const vyhubUser: any = await vyhub.json();
       // Get the "id" of the user
-      const vyhubUserID = vyhubUser.id;
+      const vyhubUserID = vyhubUser && vyhubUser.id;
 
-      const vyhubBan: any = await fetch(process.env.VYHUB_API_URL + '/ban/' + '?sort_desc=true&active=true&user_id=' + vyhubUserID + '&page=1&size=50', {
+      if (!vyhubUserID) {
+          return callback(null, 'No items found');
+      }
+
+      const vyhubBan = await fetch(process.env.VYHUB_API_URL + '/ban/' + '?sort_desc=true&active=true&user_id=' + vyhubUserID + '&page=1&size=50', {
           method: 'GET',
-          headers: {
-              'Content-Type': 'application/json',
-              Authorization: 'Bearer ' + process.env.VYHUB_API_KEY,
-          },
+          headers,
       });
-      const vyhubBanData = await vyhubBan.json();
+
+      // A 401/403 here almost always means VYHUB_API_KEY is missing, expired or
+      // lacks the `ban_show` property. Surface it loudly instead of silently
+      // treating it as "no bans found" (which is how the old expired token failed).
+      if (!vyhubBan.ok) {
+          return callback(
+              new Error(
+                  'VyHub ban lookup failed (' + vyhubBan.status + ' ' + vyhubBan.statusText + '). ' +
+                  'Verify VYHUB_API_KEY is a valid API token with the ban_show property.'
+              )
+          );
+      }
+
+      const vyhubBanData: any = await vyhubBan.json();
 
       if (!vyhubBanData) {
           return callback(new Error('Failed to fetch or parse vyhub ban data'));
       }
 
-      // Check that the API key is valid
-      if (vyhubBanData.error) {
-          return callback(new Error('Invalid API key'));
-      }
-
       // Check if vyhubBanData is not null and items property exists and it's an array with a non-zero length
-      if (vyhubBanData && Array.isArray(vyhubBanData['items']) && vyhubBanData['items'].length > 0) {
+      if (Array.isArray(vyhubBanData['items']) && vyhubBanData['items'].length > 0) {
           callback(null, vyhubBanData);
       } else {
           callback(null, 'No items found');

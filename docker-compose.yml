@@ -1,10 +1,13 @@
-version: '3.8'
 services:
   xenforo-vyhub-appealbot:
     container_name: xenforo-vyhub-appealbot
     build:
       context: .
       dockerfile: ./docker/Dockerfile
+    # Restart the bot automatically unless it was explicitly stopped.
+    restart: unless-stopped
+    # Proper PID 1 / signal handling and zombie reaping.
+    init: true
     environment:
       - DB_HOST=${DB_HOST}
       - DB_USER=${DB_USER}
