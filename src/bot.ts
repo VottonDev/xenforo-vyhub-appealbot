@@ -103,11 +103,10 @@ async function checkBanAppeal(title: string, threadid: number, _data: any, useri
         p = p + '\n[*][B]Banned By:[/B] ' + banInfo['items'][0]['creator'].identifier + ' (' + banInfo['items'][0]['creator'].username + ')';
 
         p = p + '\n[/LIST]';
-        // The api-wrapper injects `message` straight into the query string without
-        // encoding it, so we must URL-encode here. encodeURIComponent (not the
-        // deprecated escape()) correctly handles spaces, BB-code brackets and any
-        // non-ASCII characters in ban reasons/usernames.
-        p = encodeURIComponent(p);
+        // The message is passed as-is: xenforoWrapper sends POST params as a
+        // form-urlencoded body, which handles spaces, BB-code brackets and any
+        // non-ASCII characters in ban reasons/usernames. Do NOT pre-encode here,
+        // or the body would be double-encoded.
 
         // If the thread title already has steamid in it, don't post it again
         // nor update the thread
