@@ -1,0 +1,5 @@
+# Generated / vendored files — never reformat these
+node_modules
+build
+package-lock.json
+pnpm-lock.yaml
