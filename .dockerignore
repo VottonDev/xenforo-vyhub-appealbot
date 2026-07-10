@@ -9,6 +9,9 @@ build
 # Never bake secrets into the image
 .env
 .env.*
+# Tests run in CI, not in the runtime image
+**/*.test.ts
+**/*.test.js
 # Compose / docs are not needed inside the image
 docker-compose.yml
 *.md

@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env ./build/bot.js",
     "build": "tsc",
-    "prettify": "prettier --write ."
+    "pretest": "tsc",
+    "test": "node --test \"build/**/*.test.js\"",
+    "prettify": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "repository": {
     "type": "git",
