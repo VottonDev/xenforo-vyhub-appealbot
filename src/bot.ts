@@ -1,6 +1,3 @@
-import * as dotenv from 'dotenv';
-import fetch from 'node-fetch';
-dotenv.config();
 import sql from './common/db.js';
 import xenforo from './common/xenforoWrapper.js';
 

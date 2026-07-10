@@ -28,4 +28,7 @@ COPY --from=build /app/build ./build
 # Drop root privileges; the `node` user ships with the base image.
 USER node
 
+# Env vars are injected by docker-compose's `environment:` block in production
+# (no .env is baked into the image), so the runtime needs no --env-file flag here.
+# Local dev loads .env natively via the `start` npm script instead.
 CMD ["node", "build/bot.js"]

@@ -1,7 +1,3 @@
-import * as dotenv from 'dotenv';
-import fetch, { Response } from 'node-fetch';
-dotenv.config();
-
 // A small hand-rolled client for the XenForo REST API. It replaces the old
 // @votton/api-wrapper, which pulled in the deprecated `request` library (the
 // source of a large batch of dependabot advisories). The public surface is kept
@@ -49,8 +45,9 @@ function form(fields: Record<string, any>): URLSearchParams {
   return body;
 }
 
-// Core request. node-fetch adds the urlencoded Content-Type automatically when
-// the body is a URLSearchParams, so we only need to set the API key header.
+// Core request. Node's built-in fetch (undici) adds the urlencoded Content-Type
+// automatically when the body is a URLSearchParams, so we only need to set the
+// API key header.
 async function request(method: 'GET' | 'POST', path: string, body: URLSearchParams | null, callback?: Callback): Promise<void> {
   try {
     const response = await fetch(root + path, {

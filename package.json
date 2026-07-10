@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ./build/bot.js",
+    "start": "node --env-file-if-exists=.env ./build/bot.js",
     "build": "tsc",
     "prettify": "prettier --write ."
   },
@@ -20,14 +20,12 @@
   },
   "homepage": "https://github.com/VottonDev/xenforo-vyhub-appealbot#readme",
   "devDependencies": {
-    "@types/node": "^26.1.0",
-    "prettier": "^3.9.4",
+    "@types/node": "^26.1.1",
+    "prettier": "^3.9.5",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "mysql2": "^3.22.5",
-    "node-fetch": "^3.3.2"
+    "mysql2": "^3.22.6"
   }
 }
